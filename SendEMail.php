@@ -3,7 +3,8 @@ class SendEMail
 {
 	static $transport = false;
 
-	public  // path to template directories
+	public
+        // path to template directories
 		$templatesPath,
 		// template directory name
 		$templateDirname,
@@ -38,7 +39,11 @@ class SendEMail
 	public function __construct()
 	{
 		if (!self::$transport)
-			self::$transport = Swift_SmtpTransport::newInstance();
+			//self::$transport = Swift_SmtpTransport::newInstance();
+			self::$transport = (new Swift_SmtpTransport('smtp.gmail.com', 465, "ssl"))
+                ->setUsername('e.u.zubkov1@gmail.com')
+                ->setPassword('JpAd8NS8')
+            ;
 	}
 	//----------
 	// send email
