@@ -4,81 +4,81 @@ require 'phpmailer/src/PHPMailer.php';
 require 'phpmailer/src/SMTP.php';
 require 'phpmailer/src/Exception.php';
 
-// Переменные, которые отправляет пользователь
-$name = $_POST['name'];
-$email = $_POST['email'];
-$text = $_POST['text'];
-$file = $_FILES['myfile'];
 
-$recipients[0] = array(
-    'email'           => 'zubkoveu@mail.ru',
-    'user'            => 'Евгений',
-    'title'           => 'title',
-    'body'            => 'body',
-    'file'            => 'file'
-);
+function sendMail($rName, $rEmail, $rTitle, $rBody, $rFile) {
+    $name = $rName;
+    $email = $rEmail;
+    $title = $rTitle;
+    $text = $rBody;
+    $file = $rFile;
 
-// Формирование самого письма
-$title = $recipients[0][email];
-$body = "
-<h2>Новое письмо</h2>
-<b>Имя:</b> $name<br>
-<b>Почта:</b> $email<br><br>
-<b>Сообщение:</b><br>$text
-";
+    // макет письма
+    $body = "
+        <h2>Header</h2>
+        <b>To:</b> $name<br>
+        <b>Mail:</b> $email<br><br>
+        <b>Message:</b><br>$text
+        ";
 
-// Настройки PHPMailer
-$mail = new PHPMailer\PHPMailer\PHPMailer();
-try {
-    $mail->isSMTP();
-    $mail->CharSet = "UTF-8";
-    $mail->SMTPAuth = true;
-    //$mail->SMTPDebug = 2;
-    $mail->Debugoutput = function ($str, $level) {
-        $GLOBALS['status'][] = $str;
-    };
+    // Настройки PHPMailer
+    $mail = new PHPMailer\PHPMailer\PHPMailer();
+    try {
+        $mail->isSMTP();
+        $mail->CharSet = "UTF-8";
+        $mail->SMTPAuth = true;
+        //$mail->SMTPDebug = 2;
+        $mail->Debugoutput = function ($str, $level) {
+            $GLOBALS['status'][] = $str;
+        };
 
-    // Настройки вашей почты
-    $mail->Host = 'smtp.gmail.com'; // SMTP сервера вашей почты
-    $mail->Username = 'e.u.zubkov1@gmail.com'; // Логин на почте
-    $mail->Password = 'JpAd8NS8'; // Пароль на почте
-    $mail->SMTPSecure = 'ssl';
-    $mail->Port = 465;
-    $mail->setFrom('e.u.zubkov1@gmail.com', 'Evgeniy Zubkov'); // Адрес самой почты и имя отправителя
+        // Настройки почты
+        $mail->Host = 'smtp.gmail.com'; // SMTP сервера вашей почты
+        $mail->Username = 'e.u.zubkov1@gmail.com'; // Логин на почте
+        $mail->Password = 'okbyepnqnbpiewti'; // Пароль на почте
+        $mail->SMTPSecure = 'ssl';
+        $mail->Port = 465;
+        $mail->setFrom('tutoria@tutoria.com', 'Tutoria'); // Адрес самой почты и имя отправителя
 
-    // Получатель письма
-    $mail->addAddress($recipients[0][email]);
-    //$mail->addAddress('youremail@gmail.com'); // Ещё один, если нужен
+        // Получатель письма
+        $mail->addAddress($email);
+        //$mail->addAddress($email); // Ещё один, если нужен
 
-    // Прикрипление файлов к письму
-    if (!empty($file['name'][0])) {
-        for ($ct = 0; $ct < count($file['tmp_name']); $ct++) {
-            $uploadfile = tempnam(sys_get_temp_dir(), sha1($file['name'][$ct]));
-            $filename = $file['name'][$ct];
-            if (move_uploaded_file($file['tmp_name'][$ct], $uploadfile)) {
-                $mail->addAttachment($uploadfile, $filename);
-                $rfile[] = "Файл $filename прикреплён";
-            } else {
-                $rfile[] = "Не удалось прикрепить файл $filename";
+        // Прикрипление файлов к письму
+        if (!empty($file['name'][0])) {
+            for ($ct = 0; $ct < count($file['tmp_name']); $ct++) {
+                $uploadfile = tempnam(sys_get_temp_dir(), sha1($file['name'][$ct]));
+                $filename = $file['name'][$ct];
+                if (move_uploaded_file($file['tmp_name'][$ct], $uploadfile)) {
+                    $mail->addAttachment($uploadfile, $filename);
+                    $rfile[] = "The file $filename is attached";
+                } else {
+                    $rfile[] = "Failed to attach file $filename";
+                }
             }
         }
-    }
-// Отправка сообщения
-    $mail->isHTML(true);
-    $mail->Subject = $title;
-    $mail->Body = $body;
+        // Отправка сообщения
+        $mail->isHTML(true);
+        $mail->Subject = $title;
+        $mail->Body = $body;
 
-// Проверяем отравленность сообщения
-    if ($mail->send()) {
-        $result = "success";
-    } else {
+        // Проверяем отравленность сообщения
+        if ($mail->send()) {
+            $result = "success";
+            $status = "Message sent successfully";
+        } else {
+            $result = "error";
+            $status = "Error sending message";
+        }
+
+    } catch (Exception $e) {
         $result = "error";
+        $status = "The message was not sent. Cause of error: {$mail->ErrorInfo}";
     }
 
-} catch (Exception $e) {
-    $result = "error";
-    $status = "Сообщение не было отправлено. Причина ошибки: {$mail->ErrorInfo}";
+    // Отображение результата
+    echo json_encode(["result" => $result, "resultfile" => $rfile, "status" => $status]);
 }
 
-// Отображение результата
-echo json_encode(["result" => $result, "resultfile" => $rfile, "status" => $status]);
+// example
+sendMail("Evgeniy","zubkoveu@mail.ru", "Message for you", "Hi, this is my message", $_FILES['myfile']);
+
